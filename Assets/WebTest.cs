@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine.Networking;
 using UnityEngine;
+using UnityEngine.UI;
 
 
 
 public class WebTest : MonoBehaviour
 {
+
+    public  Text DebugText;
 
     static  string GenerateHash(string vName) {
         var tDevice = SystemInfo.deviceUniqueIdentifier;
@@ -18,13 +21,26 @@ public class WebTest : MonoBehaviour
     string mUserUUID;
 
     string mDBURI = "https://modulo17.com/dbtest/user.php";
-//    string mDBURI = "https://rlshed.com/debug/user.php";
+    //    string mDBURI = "https://rlshed.com/debug/user.php";
+
+
+    List<string> DebugStrings=new List<string>();
 
     void Start()
 	{
-        mSessionUUID = System.Guid.NewGuid().ToString(); //New Session ID everytime we run
+        AddDebugString("Start");
 
-        mUserUUID = GenerateHash("Richard"); //Make User ID from device and a user name
+        while (true) {
+            if(PlayerPrefs.HasKey("PlayerID")) {
+                mUserUUID = PlayerPrefs.GetString("PlayerID");
+                break;
+            }
+            PlayerPrefs.SetString("PlayerID", System.Guid.NewGuid().ToString());
+        }
+
+        mSessionUUID = System.Guid.NewGuid().ToString(); //New Session ID everytime we run
+        AddDebugString("UserID:"+mUserUUID+" SessionID:"+mSessionUUID);
+
         StartCoroutine(NewUser());
 	}
 
@@ -34,7 +50,19 @@ public class WebTest : MonoBehaviour
         StartCoroutine(NewEvent(tEventText));
     }
 
-        IEnumerator NewUser() //Create new user, will only work once per user
+    void    AddDebugString(string vString) {
+        if (DebugStrings.Count > 10) {
+            DebugStrings.RemoveRange(0, DebugStrings.Count - 10);
+        }
+        DebugStrings.Add(vString);
+
+        DebugText.text = "";
+        foreach (string tS in DebugStrings) {
+            DebugText.text += tS + "\n";
+        }
+    }
+
+    IEnumerator NewUser() //Create new user, will only work once per user
 	{
 		WWWForm form = new WWWForm();
         form.AddField("command", "newuser");
@@ -47,15 +75,15 @@ public class WebTest : MonoBehaviour
 			if (www.isNetworkError || www.isHttpError)
 			{
                 if (www.error.Contains("409")) {
-                    Debug.Log("Duplicate ID");
+                    AddDebugString("Duplicate ID");
                     StartCoroutine(NewSession());
                 } else {
-                    Debug.Log(www.error);
+                    AddDebugString(www.error);
                 }
             }
 			else
 			{
-				Debug.Log("User Created");
+				AddDebugString("User Created");
                 StartCoroutine(NewSession());
             }
         }
@@ -72,12 +100,12 @@ public class WebTest : MonoBehaviour
 
             if (www.isNetworkError || www.isHttpError) {
                 if (www.error.Contains("409")) {
-                    Debug.Log("Duplicate ID");
+                    AddDebugString("Duplicate ID");
                 } else {
-                    Debug.Log(www.error);
+                    AddDebugString(www.error);
                 }
             } else {
-                Debug.Log("Session Created");
+                AddDebugString("Session Created");
                 }
             }
     }
@@ -94,12 +122,12 @@ public class WebTest : MonoBehaviour
 
             if (www.isNetworkError || www.isHttpError) {
                 if (www.error.Contains("409")) {
-                    Debug.Log("Duplicate ID");
+                    AddDebugString("Duplicate ID");
                 } else {
-                    Debug.Log(www.error);
+                    AddDebugString(www.error);
                 }
             } else {
-                Debug.Log("Event Created");
+                AddDebugString("Event Created");
             }
         }
     }
